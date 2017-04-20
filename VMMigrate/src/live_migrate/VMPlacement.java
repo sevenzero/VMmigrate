@@ -17,6 +17,7 @@ public class VMPlacement {
 	private static List<Host> hostlist;
 	private static int hostid;
 	private static int vmid;
+	private static double fitness;
 
 	public static void main(String[] args) {
 		hostid = vmid = 0;
@@ -28,6 +29,7 @@ public class VMPlacement {
 		specVm2(20);
 		PSOSel();
 		RandomSel();
+		//Greedy();
 	}
 
 	/**
@@ -147,6 +149,28 @@ public class VMPlacement {
 		}
 	}
 
+	public static void calcuLoadDgree(List<Vm> vmList,List<Host> hostList){
+		double[] x = new double[hostList.size()];
+		// 在对物理机进行均衡度计算时才更新每个物理机的资源状态
+		for (int i = 0; i < hostList.size(); i++) {
+			VMPlacement.updateHost(hostList.get(i));// 根据主机中vmlist编号更新主机资源
+			x[i] = hostList.get(i).getLoad();
+		}
+		fitness = Particle.StandardDiviation(x);
+		System.out.println("算法放置结果的负载均衡度为："+fitness);
+		int j=0;
+		System.out.println("虚拟机依次放置为：");
+		for(int i=0;i<vmList.size();i++){
+			Vm vm=vmList.get(i);
+			System.out.print(vm.getHost().getId()+" ");
+			j++;
+			if (j == 10) {
+				System.out.println();
+				j = 0;
+			}
+		}
+		System.out.println();
+	}
 	/**
 	 * 标准PSO算法
 	 */
@@ -170,5 +194,11 @@ public class VMPlacement {
 		RandomSel random=new RandomSel(vmlist,hostlist);
 		random.vmToHost();
 		random.showResult();
+	}
+	
+	private static void Greedy(){
+		Greedy greedysel=new Greedy(vmlist,hostlist);
+		greedysel.GreedySel();
+		greedysel.showResult();
 	}
 }

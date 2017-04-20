@@ -10,7 +10,6 @@ public class RandomSel {
 	private static HashMap<Vm, ArrayList<Host>> hashmap = new HashMap<Vm, ArrayList<Host>>();
 	private static List<Vm> vmlist;
 	private static List<Host> hostlist;
-	private static double fitness;
 	public RandomSel(List<Vm> vmList, List<Host> hostList) {
 		RandomSel.vmlist = vmList;
 		RandomSel.hostlist = hostList;
@@ -66,25 +65,6 @@ public class RandomSel {
 	}
 	
 	public  void showResult(){
-		double[] x = new double[hostlist.size()];
-		// 在对物理机进行均衡度计算时才更新每个物理机的资源状态
-		for (int i = 0; i < hostlist.size(); i++) {
-			VMPlacement.updateHost(hostlist.get(i));// 根据主机中vmlist编号更新主机资源
-			x[i] = hostlist.get(i).getLoad();
-		}
-		fitness = Particle.StandardDiviation(x);
-		System.out.println("随机放置结果的负载均衡度为："+fitness);
-		int j=0;
-		System.out.println("虚拟机依次放置为：");
-		for(int i=0;i<vmlist.size();i++){
-			Vm vm=vmlist.get(i);
-			System.out.print(vm.getHost().getId()+" ");
-			j++;
-			if (j == 10) {
-				System.out.println();
-				j = 0;
-			}
-		}
-		System.out.println();
+		VMPlacement.calcuLoadDgree(vmlist, hostlist);
 	}
 }
