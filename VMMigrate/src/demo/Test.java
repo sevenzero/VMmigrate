@@ -1,115 +1,192 @@
 package demo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map.Entry;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.RecursiveTask;
 
-import live_migrate.PSO;
-
+import live_migrate.Particle;
 import vmproperty.Host;
 import vmproperty.Vm;
 
-public class Test {
-	private static List<Vm> vmlist;
-	private static List<Host> hostlist;
-	private static HashMap<Vm, ArrayList<Host>> hashmap = new HashMap<Vm, ArrayList<Host>>();
+/**
+ * 粒子群类
+ * 
+ * @author seven
+ * 
+ */
+public class Test extends RecursiveAction {
+	Particle[] pars;
+	double global_best;// 全局最优适应度值
+	double global_worst;
+	int pcount_all;
+	int pcount;// 粒子数目
+	private static int dim;// 维度
+	private static int Imax;// 最差纪录次数阈值
 
-	public static void main(String[] args) {
-		int hostid = 0;
-		long storage = 102400;
-		int hostram = 2048;
-		long hostbw = 2000;
-		int pesNumOfhost = 2;
-		hostlist = new ArrayList<Host>();
-		for (int i = 0; i < 10; i++) { // 初始化10个物理主机
-			Host host = new Host(hostid, storage, hostram, hostbw, pesNumOfhost);
-			hostlist.add(host);
-			hostid++;
-		}
-		int vmid = 0;
-		int userid = 1;
-		int ram = 512; // 内存
-		long bw = 1000;// 带宽
-		int pesNumber = 1;
-		long size = 10000;
-		String vmm = "Xen";
-		vmlist = new ArrayList<Vm>();
-		for (int i = 0; i < 5; i++) {
-			Vm vm = new Vm(vmid, userid, pesNumber, ram, bw, size, vmm);
-			vmlist.add(vm);
-			vmToHost(vm);
-			vmid++;
+	private static final int THRESHOLD = 20;
+	private int start;
+	private int end;
+
+	// private static int ms;//主机的数量，这里是为了限制迭代过程中的位置
+
+	public Test(List<Vm> vmList, List<Host> hostList,int start, int end) {
+		Particle.vmlist = vmList;
+		dim = vmList.size();
+		Particle.hostlist = hostList;
+		this.start = start;
+		this.end = end;
+		this.pcount=end-start;
+	}
+
+//	public Test(int start, int end) {
+//		this.start = start;
+//		this.end = end;
+//	}
+
+	@Override
+	protected void compute() {
+		boolean canCompute = start - end <= THRESHOLD;
+		if (canCompute) {
+			for (int i = start; i < end; i++) {
+				pars[i] = new Particle();
+				pars[i].init();
+				pars[i].evaluate();
+				// if (global_best > pars[i].fitness) {
+				// global_best = pars[i].fitness;
+				// //index = i;
+				// }
+			}
+		} else {
+			int mid = (start + end) / 2;
+			Test leftTask = new Test(Particle.vmlist,Particle.hostlist,start, mid);
+			Test rightTask = new Test(Particle.vmlist,Particle.hostlist,mid + 1, end);
+
+			// 执行子任务
+			leftTask.fork();
+			rightTask.fork();
+
+			// 等待子任务执行完，并得到结果
+			leftTask.join();
+			rightTask.join();
+
 		}
 	}
 
 	/**
-	 * 选择一个主机放置vm
+	 * 粒子群初始化
 	 * 
-	 * @param vm
+	 * @param n
+	 *            粒子的数量
 	 */
-	private static void vmToHost(Vm vm) {
-		// 匹配可以放置该vm的物理机
-		ArrayList<Host> fithostlist = new ArrayList<Host>();
-		for (int i = 0; i < hostlist.size(); i++) {
-			if (selFitHost(vm, hostlist.get(i))) {
-				fithostlist.add(hostlist.get(i));// 将符合条件的物理主机放入数组中
-			}
+	public void init(int n) {
+		pcount = n;
+		global_best = 1;
+		int index = -1;// 拥有最好位置的粒子编号
+		Imax = 3;
+		pars = new Particle[pcount + 1];// 初始化多一个粒子，不参与位置速度的更新，只用作暂存中间数据
+		// 类的静态成员的初始化
+		Particle.c1 = 2;
+		Particle.c2 = 2;
+		Particle.w = 0.9;
+		Particle.dims = dim;
+		// Particle.m=ms;
+		ForkJoinPool forkjoinpool = new ForkJoinPool();
+		Test task = new Test(Particle.vmlist,Particle.hostlist,0, pcount);
+		forkjoinpool.invoke(task);
+		// for (int i = 0; i < pcount; i++) {
+		// pars[i] = new Particle();
+		// pars[i].init();
+		// pars[i].evaluate();
+		// if (global_best > pars[i].fitness) {
+		// global_best = pars[i].fitness;
+		// index = i;
+		// }
+		//
+		// }
+		pars[pcount] = new Particle();
+		pars[pcount].init();
+		System.out.println(global_best);
+		Particle.gbest = new int[Particle.dims];
+		for (int i = 0; i < dim; i++) {
+			Particle.gbest[i] = pars[index].pos[i];
+			System.out.print(Particle.gbest[i] + " ");
 		}
-		if (fithostlist.size() == 0)
-			System.out.println(vm.getId() + "号虚拟机无合适物理机可以放置");
-		else {
-			hashmap.put(vm, fithostlist); // 将虚拟机与满足条件的主机进行映射
-			Set<Entry<Vm, ArrayList<Host>>> sets = hashmap.entrySet();
-			for (Entry<Vm, ArrayList<Host>> entry : sets) {
-				System.out.print(entry.getKey().getId() + "\t");
-				for (Host i : entry.getValue()) {
-					System.out.print(i.getId() + " ");
+		System.out.println("\n========init finished!========");
+	}
+
+	/**
+	 * 粒子群的运行
+	 */
+	public void run(int runtimes) {
+		System.out.println("=========run start========");
+		int cnt = 1;
+		int index;
+		int idx;
+		while (cnt <= runtimes) {
+			index = -1;
+			idx = -1;
+			global_worst = 0;
+			// Particle.w=0.9-0.5/runtimes*cnt;
+			// 每个粒子更新位置和适应值
+			for (int i = 0; i < pcount; i++) {
+				pars[i].updatev(cnt, runtimes);
+				pars[i].evaluate();
+				if (global_best > pars[i].fitness) {
+					global_best = pars[i].fitness;
+					index = i;
 				}
-				System.out.println();
+				if (global_worst < pars[i].fitness) {
+					global_worst = pars[i].fitness;
+					idx = i;
+				}// 寻找每次迭代中适应度最差的粒子
 			}
-			vm.setHost(randomSel(vm));
-			System.out.println(vm.getId() + "\t" + vm.getHost().getId());
+			for (int i = 0; i < dim; i++) {
+				for (int j = 0; j < pcount; j++) {
+					pars[pcount].pos[i] += pars[j].pos[i];
+				}
+				pars[pcount].pos[i] = pars[pcount].pos[i] / pcount;
+			}// 计算粒子群位置的平均值存在在附加的粒子中
+			if (idx != -1)
+				pars[idx].count++;
+			for (int i = 0; i < pcount; i++) {
+				if (pars[i].count == Imax) {// 如果粒子最差纪录次数达到预设的次数，则对粒子进行进化
+					// pars[i].updateParticle(pars[pcount]);
+					for (int j = 0; j < dim; j++) {
+						pars[i].pos[j] = pars[pcount].pos[i];
+					}
+
+				}
+				pars[i].count = 0;
+			}
+			System.out.print(global_best + "    ");
+			// 发现更好的解
+			if (index != -1) {
+				for (int i = 0; i < dim; i++) {
+					Particle.gbest[i] = pars[index].pos[i];
+					System.out.print(Particle.gbest[i] + " ");
+				}
+			}
+			System.out.println();
+			cnt++;
 		}
 	}
 
 	/**
-	 * 判断物理机能否满足条件放置虚拟机
-	 * 
-	 * @param vm
-	 * @param host
-	 * @return
+	 * 显示程序求解结果
 	 */
-	private static boolean selFitHost(Vm vm, Host host) {
-		if (vm.getBw() > host.getAvailableBw()) {
-			return false;
+	public void showresult() {
+		System.out.println("算法求得的最优解为：" + global_best);
+		System.out.println("虚拟机放置的主机编号依次是");
+		int j = 0;
+		for (int i = 0; i < Particle.dims; i++) {
+			System.out.print(Particle.gbest[i] + " ");
+			j++;
+			if (j == 10) {
+				System.out.println();
+				j = 0;
+			}
 		}
-		if (vm.getNumberOfPes() > host.getAvailblePes()) {
-			return false;
-		}
-		if (vm.getRam() > host.getAvailableRam()) {
-			return false;
-		}
-		return true;
 	}
-
-	/**
-	 * 从候选物理机列表中随机选择一个
-	 * 
-	 * @param vm
-	 * @return 被选中的主机
-	 */
-	private static Host randomSel(Vm vm) {
-		Host value = null;
-		// 从满足条件的主机中随机获取一个物理机编号
-		int index = (int) (Math.random() * hashmap.get(vm).size());
-		value = hashmap.get(vm).get(index);
-		value.setAvailableBw(value.getAvailableBw() - vm.getBw());
-		value.setAvailableRam(value.getAvailableRam() - vm.getRam());
-		value.setAvailblePes(value.getAvailblePes() - vm.getNumberOfPes());
-		return value;
-	}
-	
 
 }

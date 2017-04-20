@@ -93,28 +93,36 @@ public class PSO {
 			for (int i = 0; i < dim; i++) {
 				for (int j = 0; j < pcount; j++) {
 					pars[pcount].pos[i] += pars[j].pos[i];
+					pars[pcount].fitness+=pars[i].fitness;
+					pars[pcount].pbest_fitness+=pars[i].pbest_fitness;
 				}
-				pars[pcount].pos[i] = (int) pars[pcount].pos[i] / pcount;
+				pars[pcount].pos[i] = pars[pcount].pos[i] / pcount;
+				pars[pcount].fitness/=pcount;
+				pars[pcount].pbest_fitness/=pcount;
 			}//计算粒子群位置的平均值存在在附加的粒子中
 			if (idx != -1)
 				pars[idx].count++;
 			for (int i = 0; i < pcount; i++) {
 				if (pars[i].count == Imax) {// 如果粒子最差纪录次数达到预设的次数，则对粒子进行进化
 					// pars[i].updateParticle(pars[pcount]);
-					for (int j = 0; j < dim; j++)
+					for (int j = 0; j < dim; j++){
 						pars[i].pos[j] = pars[pcount].pos[i];
+						pars[i].fitness=pars[pcount].fitness;
+						pars[i].pbest_fitness=pars[pcount].pbest_fitness;
+					}
+						
 				}
 				pars[i].count = 0;
 			}
-			System.out.print(global_best + "    ");
+		//	System.out.print(global_best + "    ");
 			// 发现更好的解
 			if (index != -1) {
 				for (int i = 0; i < dim; i++) {
 					Particle.gbest[i] = pars[index].pos[i];
-					System.out.print(Particle.gbest[i] + " ");
+					//System.out.print(Particle.gbest[i] + " ");
 				}
 			}
-			System.out.println();
+			//System.out.println();
 			cnt++;
 		}
 	}
@@ -123,7 +131,7 @@ public class PSO {
 	 * 显示程序求解结果
 	 */
 	public void showresult() {
-		System.out.println("算法求得的最优解为：" + global_best);
+		System.out.println("PSO算法求得的最优解为：" + global_best);
 		System.out.println("虚拟机放置的主机编号依次是");
 		int j = 0;
 		for (int i = 0; i < Particle.dims; i++) {

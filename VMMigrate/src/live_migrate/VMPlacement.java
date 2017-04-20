@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ForkJoinPool;
+
+import demo.Test;
 
 import vmproperty.Host;
 import vmproperty.Vm;
@@ -12,8 +15,6 @@ import vmproperty.Vm;
 public class VMPlacement {
 	private static List<Vm> vmlist;
 	private static List<Host> hostlist;
-	private static HashMap<Vm, ArrayList<Host>> hashmap = new HashMap<Vm, ArrayList<Host>>();
-
 	private static int hostid;
 	private static int vmid;
 
@@ -26,6 +27,7 @@ public class VMPlacement {
 		specVm1(20);
 		specVm2(20);
 		PSOSel();
+		RandomSel();
 	}
 
 	/**
@@ -101,39 +103,6 @@ public class VMPlacement {
 	}
 
 	/**
-	 * 选择一个主机放置vm
-	 * 
-	 * @param vm
-	 */
-	private static void vmToHost(Vm vm) {
-		// 匹配可以放置该vm的物理机
-		ArrayList<Host> fithostlist = new ArrayList<Host>();
-		for (int i = 0; i < hostlist.size(); i++) {
-			if (selFitHost(vm, hostlist.get(i))) {
-				fithostlist.add(hostlist.get(i));// 将符合条件的物理主机放入数组中
-			}
-		}
-		if (fithostlist.size() == 0)
-			System.out.println(vm.getId() + "号虚拟机无合适物理机可以放置");
-		else {
-			hashmap.put(vm, fithostlist); // 将虚拟机与满足条件的主机进行映射
-			// 输出vm和host的映射关系
-			Set<Entry<Vm, ArrayList<Host>>> sets = hashmap.entrySet();
-			for (Entry<Vm, ArrayList<Host>> entry : sets) {
-				System.out.print(entry.getKey().getId() + "\t");
-				for (Host i : entry.getValue()) {
-					System.out.print(i.getId() + " ");
-				}
-				System.out.println();
-			}
-			randomSel(vm);
-
-			System.out.println(vm.getId() + "\t" + vm.getHost().getId());
-
-		}
-	}
-
-	/**
 	 * 判断物理机能否满足条件放置虚拟机
 	 * 
 	 * @param vm
@@ -162,22 +131,6 @@ public class VMPlacement {
 	}
 
 	/**
-	 * 从候选物理机列表中随机选择一个
-	 * 
-	 * @param vm
-	 * @return 被选中的主机
-	 */
-	private static void randomSel(Vm vm) {
-		Host value = null;
-		// 从满足条件的主机中随机获取一个物理机编号
-		int index = (int) (Math.random() * hashmap.get(vm).size());
-		value = hashmap.get(vm).get(index);
-		value.addVm(vm);
-		vm.setHost(value);
-		updateHost(value);
-	}
-
-	/**
 	 * 更新主机资源
 	 * 
 	 * @param host
@@ -201,9 +154,21 @@ public class VMPlacement {
 		//for (int i = 0; i < 15; i++) {
 			PSO pso = new PSO(vmlist, hostlist);
 			pso.init(100);
-			pso.run(100);
+			pso.run(150);
 			pso.showresult();
 			System.out.println();
 		//}
+		
+//		Test pso = new Test(vmlist, hostlist,0,100);
+//		pso.init(100);
+//		//pso.run(150);
+//		pso.showresult();
+//		System.out.println();
+	}
+	
+	private static void RandomSel(){
+		RandomSel random=new RandomSel(vmlist,hostlist);
+		random.vmToHost();
+		random.showResult();
 	}
 }

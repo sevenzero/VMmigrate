@@ -116,8 +116,8 @@ public class Particle {
 	 * @param x
 	 * @return
 	 */
-	private static double StandardDiviation(double[] x) {
-		int m = hostlist.size();
+	public static double StandardDiviation(double[] x) {
+		int m =x.length;
 		double sum = 0;
 		for (int i = 0; i < m; i++) {// ÇóºÍ
 			sum += x[i];
