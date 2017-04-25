@@ -28,8 +28,9 @@ public class VMPlacement {
 		specVm1(20);
 		specVm2(20);
 		PSOSel();
-		RandomSel();
-		//Greedy();
+//		RandomSel();
+//		Particle.resetHost();
+//		Greedy();
 	}
 
 	/**
@@ -149,14 +150,13 @@ public class VMPlacement {
 		}
 	}
 
-	public static void calcuLoadDgree(List<Vm> vmList,List<Host> hostList){
+	public static  void calcuLoadDgree(List<Vm> vmList,List<Host> hostList){
 		double[] x = new double[hostList.size()];
 		// 在对物理机进行均衡度计算时才更新每个物理机的资源状态
 		for (int i = 0; i < hostList.size(); i++) {
-			VMPlacement.updateHost(hostList.get(i));// 根据主机中vmlist编号更新主机资源
 			x[i] = hostList.get(i).getLoad();
 		}
-		fitness = Particle.StandardDiviation(x);
+		fitness = StandardDiviation(x);
 		System.out.println("算法放置结果的负载均衡度为："+fitness);
 		int j=0;
 		System.out.println("虚拟机依次放置为：");
@@ -171,23 +171,36 @@ public class VMPlacement {
 		}
 		System.out.println();
 	}
+	
+	/**
+	 * 求标准差
+	 * 
+	 * @param x
+	 * @return
+	 */
+	public static double StandardDiviation(double[] x) {
+		int m = x.length;
+		double sum = 0;
+		for (int i = 0; i < m; i++) {// 求和
+			sum += x[i];
+		}
+		double dAve = sum / m;// 求平均值
+		double dVar = 0;
+		for (int i = 0; i < m; i++) {// 求方差
+			dVar += (x[i] - dAve) * (x[i] - dAve);
+		}
+		return Math.sqrt(dVar / m);
+	}
 	/**
 	 * 标准PSO算法
 	 */
 	private static void PSOSel() {
 		//for (int i = 0; i < 15; i++) {
-			PSO pso = new PSO(vmlist, hostlist);
-			pso.init(100);
-			pso.run(150);
+			PSO pso = new PSO(100,250,vmlist, hostlist);
+			pso.run();
 			pso.showresult();
 			System.out.println();
 		//}
-		
-//		Test pso = new Test(vmlist, hostlist,0,100);
-//		pso.init(100);
-//		//pso.run(150);
-//		pso.showresult();
-//		System.out.println();
 	}
 	
 	private static void RandomSel(){

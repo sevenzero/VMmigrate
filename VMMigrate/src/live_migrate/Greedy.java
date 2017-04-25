@@ -19,7 +19,7 @@ public class Greedy {
 		Comparator<Host> comparator = new Comparator<Host>() {
 			public int compare(Host host1, Host host2) {
 				//按照负载从小到大排序
-				return host1.getLoad()>host2.getLoad()?1:-1;
+				return host1.getLoad()<host2.getLoad()?-1:1;
 			}
 		};
 		for (int i = 0; i < vmlist.size(); i++) {
@@ -38,8 +38,8 @@ public class Greedy {
 //				for(Host host:fithostlist)
 //					System.out.print(host.getId()+" ");
 				fithostlist.get(0).addVm(vm);
-				vm.setHost(fithostlist.get(0));
-				VMPlacement.updateHost(fithostlist.get(0));
+				vm.setHost(fithostlist.get(0));//将主机和虚拟机建立对应关系
+				VMPlacement.updateHost(fithostlist.get(0));//更新主机资源
 			}
 			//System.out.println();
 		}
