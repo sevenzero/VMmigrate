@@ -20,19 +20,14 @@ public class ParallelParticle extends RecursiveAction {
 			for (int i = start; i < end; i++) {
 				pso.getPars()[i].run();
 			}
-			double temp=Double.MAX_VALUE;
-//			for (int i = start; i < end; i++) {
-//				if(temp>pso.getPars()[i].getFitness())
-//					temp=pso.getPars()[i].getFitness();
-//				System.out.print(temp+" ");
-//				}
-//			System.out.println();
 		} else {
 			int middle = (start + end) / 2;
 			ParallelParticle pso1 = new ParallelParticle(start, middle, pso);
 			ParallelParticle pso2 = new ParallelParticle(middle, end, pso);
-			pso1.compute();
-			pso2.compute();
+//			pso1.compute();
+//			pso2.compute();
+			pso1.fork();
+			pso2.fork();
 		}
 	}
 }

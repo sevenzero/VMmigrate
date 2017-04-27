@@ -3,16 +3,19 @@ package live_migrate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import vmproperty.Host;
-import vmproperty.Vm;
+import java.util.Map;
+
 
 public class RandomSel {
 	private static HashMap<Vm, ArrayList<Host>> hashmap = new HashMap<Vm, ArrayList<Host>>();
 	private static List<Vm> vmlist;
 	private static List<Host> hostlist;
+	private static Map<Vm, Host> vmTohost;
+	private Solution solution;
 	public RandomSel(List<Vm> vmList, List<Host> hostList) {
 		RandomSel.vmlist = vmList;
 		RandomSel.hostlist = hostList;
+		vmTohost=new HashMap<Vm,Host>();
 	}
 
 	/**
@@ -61,10 +64,11 @@ public class RandomSel {
 		value = hashmap.get(vm).get(index);
 		value.addVm(vm);
 		vm.setHost(value);
+		vmTohost.put(vm, value);
 		VMPlacement.updateHost(value);
 	}
 	
 	public  void showResult(){
-		VMPlacement.calcuLoadDgree(vmlist, hostlist);
+		solution=new Solution(VMPlacement.calcuLoadDgree(vmlist, hostlist),vmTohost);
 	}
 }

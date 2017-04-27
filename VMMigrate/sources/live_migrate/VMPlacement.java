@@ -2,15 +2,10 @@ package live_migrate;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ForkJoinPool;
-
-import demo.Test;
-
-import vmproperty.Host;
-import vmproperty.Vm;
 
 public class VMPlacement {
 	private static List<Vm> vmlist;
@@ -18,13 +13,15 @@ public class VMPlacement {
 	private static int hostid;
 	private static int vmid;
 	private static double fitness;
+	private static Map<Vm, Host> vmTohost; //虚拟机与主机的映射方案
+	private static Map<Host, ArrayList<Vm>> vmInhost; //主机与搭载在其上的虚拟机映射
 
 	public static void main(String[] args) {
 		hostid = vmid = 0;
 		hostlist = new ArrayList<Host>();
 		vmlist = new ArrayList<Vm>();
 		specHost1(50);
-		//specHost2(30);
+		specHost2(30);
 		specVm1(20);
 		specVm2(20);
 		PSOSel();
@@ -150,26 +147,27 @@ public class VMPlacement {
 		}
 	}
 
-	public static  void calcuLoadDgree(List<Vm> vmList,List<Host> hostList){
+	public static  double calcuLoadDgree(List<Vm> vmList,List<Host> hostList){
 		double[] x = new double[hostList.size()];
 		// 在对物理机进行均衡度计算时才更新每个物理机的资源状态
 		for (int i = 0; i < hostList.size(); i++) {
 			x[i] = hostList.get(i).getLoad();
 		}
 		fitness = StandardDiviation(x);
-		System.out.println("算法放置结果的负载均衡度为："+fitness);
-		int j=0;
-		System.out.println("虚拟机依次放置为：");
-		for(int i=0;i<vmList.size();i++){
-			Vm vm=vmList.get(i);
-			System.out.print(vm.getHost().getId()+" ");
-			j++;
-			if (j == 10) {
-				System.out.println();
-				j = 0;
-			}
-		}
-		System.out.println();
+		return fitness;
+//		System.out.println("算法放置结果的负载均衡度为："+fitness);
+//		int j=0;
+//		System.out.println("虚拟机依次放置为：");
+//		for(int i=0;i<vmList.size();i++){
+//			Vm vm=vmList.get(i);
+//			System.out.print(vm.getHost().getId()+" ");
+//			j++;
+//			if (j == 10) {
+//				System.out.println();
+//				j = 0;
+//			}
+//		}
+//		System.out.println();
 	}
 	
 	/**
@@ -195,14 +193,40 @@ public class VMPlacement {
 	 * 标准PSO算法
 	 */
 	private static void PSOSel() {
-		//for (int i = 0; i < 15; i++) {
-			PSO pso = new PSO(100,250,vmlist, hostlist);
-			pso.run();
-			pso.showresult();
+		// for (int i = 0; i < 15; i++) {
+		PSO pso = new PSO(100, 250, vmlist, hostlist);
+		pso.run();
+		// 此时运行结束之后只是获得了一个放置方案，但是实际上虚拟机并没有部署到主机上，此时主机和虚拟机的一切状态仍是初始状态
+		// 所以需要根据该方案部署虚拟机
+		pso.showresult();
+		vmTohost = pso.getSolution().getVmTohost();
+		vmInhost = new HashMap<Host, ArrayList<Vm>>();
+		Iterator<Entry<Vm, Host>> entries = vmTohost.entrySet().iterator();
+		while (entries.hasNext()) {
+			Entry<Vm, Host> entry = entries.next();
+			Host host=entry.getValue();
+			Vm vm=entry.getKey();
+			if (!vmInhost.containsKey(host.getId())) {
+				ArrayList<Vm> list = new ArrayList<Vm>();
+				list.add(vm);
+				vmInhost.put(host, list);
+			} else {
+				vmInhost.get(host).add(vm);
+			}
+			host.addVm(vm);
+		}
+		for(Host host:hostlist){
+			System.out.print(host.getId()+" 号主机 ：");
+			for(Vm vm:host.getVmList()){
+				System.out.println(vm==null);
+				System.out.print(vm.getId()+" ");
+			}
 			System.out.println();
-		//}
+		}
+		
+		// }
 	}
-	
+	   
 	private static void RandomSel(){
 		RandomSel random=new RandomSel(vmlist,hostlist);
 		random.vmToHost();

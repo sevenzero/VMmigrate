@@ -1,8 +1,9 @@
 package demo;
 
 import java.util.List;
-import vmproperty.Host;
-import vmproperty.Vm;
+
+import live_migrate.Host;
+import live_migrate.Vm;
 
 /**
  * Á£×ÓÈºÀà

@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 
-import vmproperty.Host;
-import vmproperty.Vm;
 
 /**
  * 粒子群类
@@ -20,7 +18,7 @@ public class PSO {
 	int pcount;// 粒子数目
 	private static int dim;// 维度
 	private static int Imax;// 最差纪录次数阈值
-	private int runtime;
+	private int runtime; //迭代次数
 	private List<Vm> vmlist;
 	private List<Host> hostlist;
 	private Solution solution;
@@ -65,7 +63,7 @@ public class PSO {
 	 */
 	public void run() {
 		System.out.println("=========run start========");
-		for (int i = 1; i <= runtime; i++) {
+		for (int i = 0; i < runtime; i++) {
 			Particle tempbest = null; // 当前迭代中最优粒子
 			Particle tempworst = null;// 当前迭代中最差粒子
 			global_worst = 0;
@@ -76,26 +74,28 @@ public class PSO {
 					global_best = pars[j].getFitness();
 					tempbest = pars[j];
 					solution=new Solution(global_best,pars[j].getVmTohost());
+					System.out.println(i + " -> " + global_best + "    ");
+					//System.out.println();
 				}
 				if (global_worst < pars[j].getFitness()) {
 					global_worst = pars[j].getFitness();
 					tempworst = pars[j];
 				}// 寻找每次迭代中适应度最差的粒子
 			}
-			System.out.print(i + " -> " + global_best + "    ");
+			
 			// 发现更好的解
 			if (tempbest != null) {
 				for (Vm vm : vmlist) {
 					Particle.gbest[vm.getId()] = tempbest.getPos()[vm.getId()];
 				}
 			}
-			System.out.println();
+			
 
 			for (Vm vm : vmlist) {
 				for (int j = 0; j < pcount; j++) {
-					pars[pcount].pos[vm.getId()] += pars[j].pos[vm.getId()];
+					pars[pcount].getPos()[vm.getId()] += pars[j].getPos()[vm.getId()];
 				}
-				pars[pcount].pos[vm.getId()] = pars[pcount].pos[vm.getId()]
+				pars[pcount].getPos()[vm.getId()] = pars[pcount].getPos()[vm.getId()]
 						/ pcount;
 			}// 计算粒子群位置的平均值存在在附加的粒子中
 			if (tempworst != null)
@@ -104,7 +104,7 @@ public class PSO {
 				if (pars[j].count == Imax) {// 如果粒子最差纪录次数达到预设的次数，则对粒子进行进化
 					// pars[i].updateParticle(pars[pcount]);
 					for (Vm vm : vmlist) {
-						pars[j].pos[vm.getId()] = pars[pcount].pos[vm.getId()];
+						pars[j].getPos()[vm.getId()] = pars[pcount].getPos()[vm.getId()];
 					}
 				}
 				pars[j].count = 0;
@@ -124,7 +124,7 @@ public class PSO {
 	 * 显示程序求解结果
 	 */
 	public void showresult() {
-		System.out.println("PSO算法求得的最优解为：" + global_best);
+		System.out.println("PSO算法求得的最优解为：" + solution.getfitness());
 		System.out.println("虚拟机放置的主机编号依次是");
 	}
 
@@ -134,6 +134,14 @@ public class PSO {
 
 	public void setPars(Particle[] pars) {
 		this.pars = pars;
+	}
+	
+	public Solution getSolution() {
+		return solution;
+	}
+
+	public void setSolution(Solution solution) {
+		this.solution = solution;
 	}
 
 }

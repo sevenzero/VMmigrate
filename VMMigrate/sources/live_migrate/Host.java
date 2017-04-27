@@ -1,7 +1,8 @@
-package vmproperty;
+package live_migrate;
 
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class Host {
 	/** The id. */
@@ -66,21 +67,6 @@ public class Host {
 		System.out.println();
 	}
 
-	/**
-	 * 判断负载程度，
-	 * @return 1 表示CPU超负载
-	 * @return 2 表示带宽超负载
-	 * @return 3 表示内存超负载
-	 * @return 0 表示处于最佳负载
-	 */
-//	public int loadLevel(){
-//		uCPU=getUsedPes()/pesNum;
-//		uNet=getUsedBw()/bw;
-//		uMem=getUsedRam()/ram;
-//		if(uCPU>thmin&&uCPU<thmax&&uNet>thmin&&uNet<thmax&&uMem>thmin&&uMem<thmax)
-//			return 0;
-//		else return 4;
-//	}
 	
 	/**
 	 * 获取资源利用率

@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import vmproperty.Host;
-import vmproperty.Vm;
 
 /**
  * 粒子类
@@ -17,18 +15,18 @@ import vmproperty.Vm;
  */
 public class Particle {
 
-	public int[] pos;// 粒子的位置，数组的维度表示虚拟机的个数
-	public int[] v;
+	private int[] pos;// 粒子的位置，数组的维度表示虚拟机的个数
+	private int[] v;
 	private double fitness;
 	private int[] pbest; // 粒子的历史最好的位置
 	public static int[] gbest; // 所有粒子找到的最好位置
 	private double pbest_fitness;// 粒子的历史最优适应值
 	private int dims;
-	private static double w;
-	private static double c1;
-	private static double c2;
+	private  double w;
+	private  double c1;
+	private  double c2;
 	private static Random rnd;
-	private Map<Integer, Integer> vmTohost;// 每个粒子每次迭代产生的放置方案
+	private Map<Vm, Host> vmTohost;// 每个粒子每次迭代产生的放置方案
 
 	int size;// 单个虚拟机可以放置的主机数量
 	private List<Host> fitList;//
@@ -43,7 +41,7 @@ public class Particle {
 	public Particle(List<Vm> vmList, List<Host> hostList) {
 		this.vmlist = vmList;
 		this.hostlist = hostList;
-		this.dims = vmlist.size();
+		this.dims = vmList.size();
 		cnt = 0;
 		pos = new int[dims];
 		v = new int[dims];
@@ -51,7 +49,7 @@ public class Particle {
 		gbest = new int[dims];
 		fitness = 1;
 		pbest_fitness = Double.MAX_VALUE;
-		vmTohost = new HashMap<Integer, Integer>();
+		vmTohost = new HashMap<Vm,Host>();
 		utilAvg = new double[hostList.size()];
 	}
 
@@ -67,8 +65,8 @@ public class Particle {
 				pos[vm.getId()] = idx;
 				// 对于每个粒子，在计算位置和速度过程中，只把vm加入host的属性列表中，而不更新主机资源
 				// 在对粒子进行适应度值计算时在更新资源
-				fitList.get(pos[vm.getId()]).addVm(vm);
-				vmTohost.put(vm.getId(), host.getId());
+				fitList.get(idx).addVm(vm);
+				vmTohost.put(vm, host);
 				pbest[vm.getId()] = pos[vm.getId()];
 				v[vm.getId()] = rnd.nextInt(fitList.size()) - pos[vm.getId()];
 			}
@@ -92,9 +90,10 @@ public class Particle {
 
 	public void run() {
 		// System.out.println("run");
-		// resetHost();
+//		resetHost();
 		updatev();
 		evaluate();
+		
 	}
 
 	/**
@@ -134,8 +133,8 @@ public class Particle {
 	 */
 	private void updatev() {
 //		double k;
-		int δ = 2;
 		vmTohost.clear();
+		int δ = 2;	
 		// 线性减少w，正态函数动态调整c1，c2
 		w = 0.9 - 0.5 / 100 * cnt;
 		c1 = 0.5 + (4.5 - 0.5) / (Math.sqrt(2 * Math.PI) * δ)
@@ -158,7 +157,7 @@ public class Particle {
 			}
 			pos[vm.getId()] = pos[vm.getId()] + v[vm.getId()];
 			fitList.get(pos[vm.getId()]).vmlist.add(vm);// 第i个vm放入第pos[i]个host
-			vmTohost.put(vm.getId(), fitList.get(pos[vm.getId()]).getId());
+			vmTohost.put(vm, fitList.get(pos[vm.getId()]));
 		}
 		cnt++;
 	}
@@ -209,11 +208,11 @@ public class Particle {
 		this.pos = pos;
 	}
 
-	public Map<Integer, Integer> getVmTohost() {
+	public Map<Vm, Host> getVmTohost() {
 		return vmTohost;
 	}
 
-	public void setVmTohost(Map<Integer, Integer> vmTohost) {
+	public void setVmTohost(Map<Vm, Host> vmTohost) {
 		this.vmTohost = vmTohost;
 	}
 }
